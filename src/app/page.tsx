@@ -1,11 +1,14 @@
-import SignInGithub from "@/src/components/sign-in-github";
-import {auth} from "@/auth";
-import {SignOut} from "@/src/components/sign-out";
+import Link from "next/link";
 
-export default async function Home() {
-  const session = await auth()
-  console.log(session)
-  return (
-    session ? <SignOut/> : <SignInGithub/>
-  );
+export default function Home() {
+    return (
+        <nav>
+            <Link href="/sign-in">
+                Sign In
+            </Link>
+            <Link href="/sign-up">
+                Sign Up
+            </Link>
+        </nav>
+    );
 }
