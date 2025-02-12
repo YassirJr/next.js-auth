@@ -21,7 +21,7 @@ export const signInFields: Field[] = [
 
 export const signUpFields: Field[] = [
     {
-        name: "fullName",
+        name: "name",
         type: "text",
         label: "Full Name",
         placeholder: "Full Name",

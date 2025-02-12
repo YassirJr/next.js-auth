@@ -1,37 +1,71 @@
-import NextAuth from "next-auth"
-import Google from "next-auth/providers/google"
-import GitHub from "next-auth/providers/github"
-import Credentials from "@auth/core/providers/credentials";
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
+import Credentials from "next-auth/providers/credentials";
+import {PrismaClient} from "@prisma/client";
+import {compare} from "bcryptjs";
+import {signInSchema} from "@/src/lib/zod/schemas";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const prisma = new PrismaClient();
+
+export const {handlers, signIn, signOut, auth} = NextAuth({
+    session: {
+        strategy: "jwt",
+    },
     providers: [
         Google,
         GitHub,
         Credentials({
-            // // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-            // // e.g. domain, username, password, 2FA token, etc.
-            // credentials: {
-            //     email: {},
-            //     password: {},
-            // },
-            // authorize: async (credentials) => {
-            //     let user = null
-            //
-            //     // logic to salt and hash password
-            //     const pwHash = saltAndHashPassword(credentials.password)
-            //
-            //     // logic to verify if the user exists
-            //     user = await getUserFromDb(credentials.email, pwHash)
-            //
-            //     if (!user) {
-            //         // No user found, so this is their first attempt to login
-            //         // Optionally, this is also the place you could do a user registration
-            //         throw new Error("Invalid credentials.")
-            //     }
-            //
-            //     // return user object with their profile data
-            //     return user
-            // },
+            name: "Credentials",
+            credentials: {
+                email: {label: "Email", type: "email"},
+                password: {label: "Password", type: "password"},
+            },
+            async authorize(credentials) {
+                try {
+                    const {email, password} = await signInSchema.parseAsync(credentials);
+
+                    const user = await prisma.user.findUnique({
+                        where: {email},
+                    });
+
+                    if (!user) {
+                        return null;
+                    }
+
+                    const passwordValid = await compare(password, user.password);
+
+                    if (!passwordValid) {
+                        return null;
+                    }
+
+                    return {
+                        id: user.id.toString(),
+                        name: user.name,
+                        email: user.email,
+                    };
+                } catch (error) {
+                    console.error("Authentication error:", error);
+                    return null;
+                }
+            },
         }),
     ],
-})
+    callbacks: {
+        async jwt({token, user}) {
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
+                token.email = user.email;
+            }
+            return token;
+        },
+        async session({session, token}) {
+            session.user.id = token.id as string;
+            session.user.name = token.name;
+            session.user.email = token.email as string;
+            return session;
+        },
+    },
+    secret: process.env.NEXTAUTH_SECRET,
+});

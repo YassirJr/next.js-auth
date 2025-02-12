@@ -8,8 +8,6 @@ import {
     useForm,
     UseFormReturn,
 } from "react-hook-form";
-import { ZodType } from "zod";
-
 import { Button } from "@/src/components/ui/button";
 import {
     Form,
@@ -21,6 +19,12 @@ import {
     FormMessage,
 } from "@/src/components/ui/form";
 import { Input } from "@/src/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
+import { GithubIcon } from "lucide-react";
+import Link from "next/link";
+import { signInSchema, signUpSchema } from "@/src/lib/zod/schemas";
+import { toast } from "sonner";
+import { authService } from "@/src/services/authService";
 
 export type Field = {
     name: string;
@@ -31,70 +35,143 @@ export type Field = {
     description?: string;
 };
 
+type AuthOptions = {
+    enabled: boolean;
+    handler: () => void;
+};
+
 interface Props<T extends FieldValues> {
-    schema: ZodType<T>;
-    defaultValues: DefaultValues<T>;
-    onSubmit: (data: T) => Promise<{ success: boolean; error?: string }>;
+    defaultValues: T;
     fields: Field[];
-    title: string;
-    description: string;
-    submitText: string;
+    type: "signin" | "signup";
+    auth: {
+        credentials?: AuthOptions;
+        oauth?: {
+            github?: AuthOptions;
+            google?: AuthOptions;
+        };
+    };
 }
 
-const AuthForm = <T extends FieldValues>({
-                                                    schema,
-                                                    defaultValues,
-                                                    onSubmit,
-                                                    fields,
-                                                    title,
-                                                    description,
-                                                    submitText,
-                                                }: Props<T>) => {
+export default function AuthForm<T extends FieldValues>({
+                                                            type,
+                                                            defaultValues,
+                                                            fields,
+                                                            auth,
+                                                        }: Props<T>) {
     const form: UseFormReturn<T> = useForm({
-        resolver: zodResolver(schema),
-        defaultValues,
+        resolver: zodResolver(type === "signup" ? signUpSchema : signInSchema),
+        defaultValues: defaultValues as DefaultValues<T>,
     });
 
     const handleSubmit: SubmitHandler<T> = async (values: T) => {
-        await onSubmit(values);
+        try {
+            const response = await authService.credentials<T>(values); // This is a server function
+            if (response?.ok) {
+                toast.success(type === "signin" ? "Logged in successfully" : "Account created successfully");
+            } else {
+                toast.error(response?.error || "Invalid credentials");
+            }
+        } catch (error) {
+            console.error("Error during authentication:", error);
+            toast.error("An error occurred. Please try again.");
+        }
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            <h1 className="text-2xl font-semibold text-white">{title}</h1>
-            <p className="text-light-100">{description}</p>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="w-full space-y-6">
-                    {fields.map((field) => (
-                        <FormField
-                            key={field.name}
-                            name={field.name}
-                            render={({ field: formField }) => (
-                                <FormItem>
-                                    <FormLabel htmlFor={field.name}>{field.label}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            id={field.name}
-                                            type={field.type}
-                                            placeholder={field.placeholder}
-                                            {...formField}
-                                        />
-                                    </FormControl>
-                                    {field.description && (
-                                        <FormDescription>{field.description}</FormDescription>
-                                    )}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    ))}
-                    <Button type="submit" className="form-btn">
-                        {submitText}
-                    </Button>
-                </form>
-            </Form>
-        </div>
+        <Card>
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl">
+                    {type === "signup" ? "Create an account" : "Sign in to your account"}
+                </CardTitle>
+                <CardDescription>
+                    {type === "signup" ? (
+                        <span>
+              Already have an account?{" "}
+                            <Link href="/sign-in" className="underline font-semibold">
+                Sign in
+              </Link>
+            </span>
+                    ) : (
+                        <span>
+              Don&#39;t have an account?{" "}
+                            <Link href="/sign-up" className="underline font-semibold">
+                Sign up
+              </Link>
+            </span>
+                    )}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+                <div
+                    className={`grid gap-6 ${
+                        auth?.oauth?.google?.enabled && auth?.oauth?.github?.enabled
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
+                    }`}
+                >
+                    {auth.oauth?.google?.enabled && (
+                        <Button
+                            onClick={auth.oauth.google.handler}
+                            className="flex items-center justify-center space-x-2"
+                        >
+                            <GithubIcon className="w-6 h-6" />
+                            Google
+                        </Button>
+                    )}
+                    {auth.oauth?.github?.enabled && (
+                        <Button
+                            className="flex items-center justify-center space-x-2"
+                            onClick={auth.oauth.github.handler}
+                        >
+                            <GithubIcon className="w-6 h-6" />
+                            GitHub
+                        </Button>
+                    )}
+                </div>
+                {auth.oauth && (
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">
+                Or continue with
+              </span>
+                        </div>
+                    </div>
+                )}
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="w-full space-y-6">
+                        {fields.map((field) => (
+                            <FormField
+                                key={field.name}
+                                name={field.name}
+                                render={({ field: formField }) => (
+                                    <FormItem>
+                                        <FormLabel htmlFor={field.name}>{field.label}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                id={field.name}
+                                                type={field.type}
+                                                placeholder={field.placeholder}
+                                                {...formField}
+                                            />
+                                        </FormControl>
+                                        {field.description && (
+                                            <FormDescription>{field.description}</FormDescription>
+                                        )}
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        ))}
+                        <Button type="submit" className="w-full">
+                            {type === "signup" ? "Sign Up" : "Sign In"}
+                        </Button>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     );
-};
-
-export default AuthForm;
+}
