@@ -1,6 +1,6 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import {zodResolver} from "@hookform/resolvers/zod";
 import {
     DefaultValues,
     FieldValues,
@@ -8,7 +8,7 @@ import {
     useForm,
     UseFormReturn,
 } from "react-hook-form";
-import { Button } from "@/src/components/ui/button";
+import {Button} from "@/src/components/ui/button";
 import {
     Form,
     FormControl,
@@ -18,13 +18,13 @@ import {
     FormLabel,
     FormMessage,
 } from "@/src/components/ui/form";
-import { Input } from "@/src/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card";
-import { GithubIcon } from "lucide-react";
+import {Input} from "@/src/components/ui/input";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/src/components/ui/card";
+import {GithubIcon} from "lucide-react";
 import Link from "next/link";
-import { signInSchema, signUpSchema } from "@/src/lib/zod/schemas";
-import { toast } from "sonner";
-import { authService } from "@/src/services/authService";
+import {signInSchema, signUpSchema} from "@/src/lib/zod/schemas";
+import {toast} from "sonner";
+import {credentialsAuth} from "@/src/services/authService";
 
 export type Field = {
     name: string;
@@ -66,7 +66,7 @@ export default function AuthForm<T extends FieldValues>({
 
     const handleSubmit: SubmitHandler<T> = async (values: T) => {
         try {
-            const response = await authService.credentials<T>(values); // This is a server function
+            const response = await credentialsAuth<T>(values); // This is a server function
             if (response?.ok) {
                 toast.success(type === "signin" ? "Logged in successfully" : "Account created successfully");
             } else {
@@ -115,7 +115,7 @@ export default function AuthForm<T extends FieldValues>({
                             onClick={auth.oauth.google.handler}
                             className="flex items-center justify-center space-x-2"
                         >
-                            <GithubIcon className="w-6 h-6" />
+                            <GithubIcon className="w-6 h-6"/>
                             Google
                         </Button>
                     )}
@@ -124,7 +124,7 @@ export default function AuthForm<T extends FieldValues>({
                             className="flex items-center justify-center space-x-2"
                             onClick={auth.oauth.github.handler}
                         >
-                            <GithubIcon className="w-6 h-6" />
+                            <GithubIcon className="w-6 h-6"/>
                             GitHub
                         </Button>
                     )}
@@ -132,7 +132,7 @@ export default function AuthForm<T extends FieldValues>({
                 {auth.oauth && (
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+                            <span className="w-full border-t"/>
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
@@ -147,7 +147,7 @@ export default function AuthForm<T extends FieldValues>({
                             <FormField
                                 key={field.name}
                                 name={field.name}
-                                render={({ field: formField }) => (
+                                render={({field: formField}) => (
                                     <FormItem>
                                         <FormLabel htmlFor={field.name}>{field.label}</FormLabel>
                                         <FormControl>
@@ -161,7 +161,7 @@ export default function AuthForm<T extends FieldValues>({
                                         {field.description && (
                                             <FormDescription>{field.description}</FormDescription>
                                         )}
-                                        <FormMessage />
+                                        <FormMessage/>
                                     </FormItem>
                                 )}
                             />
