@@ -44,7 +44,7 @@ interface Props<T extends FieldValues> {
     defaultValues: T;
     fields: Field[];
     type: "signin" | "signup";
-    auth: {
+    auth?: {
         credentials?: AuthOptions;
         oauth?: {
             github?: AuthOptions;
@@ -72,9 +72,9 @@ export default function AuthForm<T extends FieldValues>({
             } else {
                 toast.error(response?.error || "Invalid credentials");
             }
-        } catch (error) {
-            console.error("Error during authentication:", error);
-            toast.error("An error occurred. Please try again.");
+        } catch (error : unknown) {
+            console.error("An error occurred:", error);
+            toast.error("An error occurred. Please try again." );
         }
     };
 
@@ -110,26 +110,26 @@ export default function AuthForm<T extends FieldValues>({
                             : "grid-cols-1"
                     }`}
                 >
-                    {auth.oauth?.google?.enabled && (
+                    {auth?.oauth?.google?.enabled && (
                         <Button
-                            onClick={auth.oauth.google.handler}
+                            onClick={auth?.oauth?.google.handler}
                             className="flex items-center justify-center space-x-2"
                         >
                             <GithubIcon className="w-6 h-6"/>
                             Google
                         </Button>
                     )}
-                    {auth.oauth?.github?.enabled && (
+                    {auth?.oauth?.github?.enabled && (
                         <Button
                             className="flex items-center justify-center space-x-2"
-                            onClick={auth.oauth.github.handler}
+                            onClick={auth?.oauth?.github.handler}
                         >
                             <GithubIcon className="w-6 h-6"/>
                             GitHub
                         </Button>
                     )}
                 </div>
-                {auth.oauth && (
+                {auth?.oauth && (
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                             <span className="w-full border-t"/>
