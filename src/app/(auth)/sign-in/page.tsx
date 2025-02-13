@@ -1,7 +1,7 @@
 import AuthForm from "@/src/components/auth-form";
 import {signInFields} from "@/src/constants";
 import {signInDefaultValues} from "@/src/lib/zod/schemas";
-import {githubAuth} from "@/src/services/authService";
+import {githubAuth, googleAuth} from "@/src/services/authService";
 
 export default function SignIn() {
     return (
@@ -15,6 +15,10 @@ export default function SignIn() {
                         github: {
                             enabled: true,
                             handler: githubAuth
+                        },
+                        google: {
+                            enabled: true,
+                            handler: googleAuth
                         }
                     }
                 }
