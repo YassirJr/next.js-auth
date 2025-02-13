@@ -18,3 +18,9 @@ import {SignInResponse} from "next-auth/react";
     });
 }
 
+export async function googleAuth(): Promise<SignInResponse> {
+    return await signIn("google", {
+        redirect: true,
+        redirectTo: "/",
+    });
+}
